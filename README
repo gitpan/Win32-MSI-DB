@@ -1,4 +1,4 @@
-Win32/MSI/DB version 1.04
+Win32/MSI/DB version 1.05
 =========================
 
 This is a object-oriented interface for changing MSI-databases.
@@ -29,6 +29,9 @@ GPL, see http://www.fsf.org/licenses/gpl.html
 
 
 **** Changes ****
+
+* since 1.04
+	Lots of cleanups by DBH. Thank you!
 
 * since 1.03
 	I've just discovered a bug in the perl package 'Win32::MSI::DB',

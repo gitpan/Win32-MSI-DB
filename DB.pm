@@ -2,36 +2,35 @@ package Win32::MSI::DB;
 
 =head1 NAME
 
-Win32::MSI::DB - a Perl package to modify MSI databases
+Win32::MSI::DB - Modify MSI databases
 
 =head1 SYNOPSIS
 
   use Win32::MSI::DB;
-  
-  $database=Win32::MSI::DB::new('filename', $flags);
 
-  $database->transform('filename', $flags);
+  $database = Win32::MSI::DB::new("filename", $flags);
 
-  $table=$database->table("table");
-  $view=$database->view("SELECT * FROM File 
-			WHERE FileSize < ?",100000);
-  
-  @rec=$table->records();
-  $rec4=$table->record(4);
-  
-  $rec->set("field","value"); # string
-  $rec->set("field",4);       # int
-  $rec->set("field","file");  # streams
-  
+  $database->transform("filename", $flags);
+
+  $table = $database->table("table");
+  $view = $database->view("SELECT * FROM File WHERE FileSize < ?", 100000);
+
+  @rec = $table->records();
+  $rec4 = $table->record(4);
+
+  $rec->set("field", "value"); # string
+  $rec->set("field", 4);       # int
+  $rec->set("field", "file");  # streams
+
   $rec->get("field");
-  $rec->getintofile("field","file");
-  
-  $field=$rec->field("field");
+  $rec->getintofile("field", "file");
+
+  $field = $rec->field("field");
   $field->set(2);
-  $data=$field->get();
+  $data = $field->get();
   $field->fromfile("autoexec.bat");
   $field->intofile("tmp.aa");
-  
+
   $db->error();
   $view->error();
   $rec->error();
@@ -40,18 +39,19 @@ Win32::MSI::DB - a Perl package to modify MSI databases
 
 =head2 Obtaining a database object
 
-This is currently done by using C<MSI::DB::new>.
-It takes F<filename> as first parameter and one of the following constants as optional second. 
+C<MSI::DB::new($filename, $mode)> returns a new database object, open
+in one of the following modes:
 
 =over 4
 
 =item $Win32::MSI::MSIDBOPEN_READONLY
 
-This opens the file B<not> read-only, but changes will not be written to disk.
+This doesn't really open the file read-only, but changes will not be
+written to disk.
 
 =item $Win32::MSI::MSIDBOPEN_TRANSACT
 
-This allows transactional functionality, ie. changes are written on commit only.
+Open in transactional mode so that changes are written only on commit.
 This is the default.
 
 =item $Win32::MSI::MSIDBOPEN_DIRECT
@@ -64,15 +64,19 @@ This creates a new database in transactional mode.
 
 =back
 
-This database object allows creation of C<table> or C<view>s, depending on your needs.
-If you simply need access to a table you can use the C<table> method; for a subset of records or even a SQL-query you can use the
-C<view> method.
+A database object allows creation of C<table>s or C<view>s.  If you
+simply need access to a table you can use the C<table> method; for a
+subset of records or even a SQL-query you can use the C<view> method.
 
 =head2 Using transforms
 
-When you have got a handle to a database, you can successivly apply transforms to it. You do this by using C<transform>, which needs the filename of the transform file (normally with extension F<.mst>) and optionally a flag specification.
+When you have got a handle to a database, you can successively apply
+transforms to it.  You do this by using C<transform>, which needs the
+filename of the transform file (normally with extension F<.mst>) and
+optionally a flag specification.
 
-Most of the possible flag values specify which merge errors are to be suppressed.
+Most of the possible flag values specify which merge errors are to be
+suppressed.
 
 =over 4
 
@@ -98,80 +102,100 @@ Ignores updating a row that doesn't exist.
 
 =item $Win32::MSI::MSITR_IGNORE_CHANGECODEPAGE
 
-Ignores that the code pages in the MSI database and the transform file do not match and neither has a neutral code page.
+Ignores that the code pages in the MSI database and the transform file
+do not match and neither has a neutral code page.
 
 =item $Win32::MSI::MSITR_IGNORE_ALL
 
-This flag combines all of the above mentioned flags. This is the default.
+This flag combines all of the above mentioned flags.  This is the
+default.
 
 =item $Win32::MSI::MSITR_VIEWTRANSFORM
 
-This flag should not be used together with the other flags. It specifies that instead of merging the data a table named C<_TransformView> is created in memory, which has the columns C<Table>, C<Column>, C<Row>, C<Data> and C<Current>.
+This flag should not be used together with the other flags.  It
+specifies that instead of merging the data, a table named
+C<_TransformView> is created in memory, which has the columns
+C<Table>, C<Column>, C<Row>, C<Data> and C<Current>.
 
 This way the data in a transform file can be directly queried.
 
-For more information please see S<http://msdn.microsoft.com/library/default.asp?url=/library/en-us/msi/setup/_transformview_table.asp>.
+For more information please see
+S<http://msdn.microsoft.com/library/default.asp?url=/library/en-us/msi/setup/_transformview_table.asp>.
 
 =back
 
-This opens the file B<not> read-only, but changes will not be written to disk.
+This doesn't open the file read-only, but changes will not be written
+to disk.
 
-A transform is a specification of changed values. So you get a MSI database from your favorite vendor, make a transform to <overlay> your own settings (the target installation directory, the features to be installed, etc.) and upon installation you can use these settings via a commandline similar to
+A transform is a specification of changed values.  So you get a MSI
+database from your favorite vendor, make a transform to overlay your
+own settings (the target installation directory, the features to be
+installed, etc.) and upon installation you can use these settings via
+a commandline similar to
 
-  msiexec /i TRANSFORMS=F<your transform file> F<the msi database> /qb
+  msiexec /i TRANSFORMS = F<your transform file> F<the msi database> /qb
 
-The changes in a transform are stored by a (table, row, cell, old value, new value) tuple.
+The changes in a transform are stored by a (table, row, cell, old
+value, new value) tuple.
 
-=head2 From a table or view to records
+=head2 Fetch records from a table or view
 
 When you have obtained a C<table> or C<view> object, you can use the
-C<record> method to access individual records. It takes a number as parameter.
-Here the records are fetched as needed; using C<undef> as parameter fetches all records and returns the first (index 0).
+C<record> method to access individual records.  It takes a number as
+parameter.  Records are fetched as needed.  Using C<undef> as parameter
+fetches all records and returns the first (index 0).
 
-Another possibility is to use the method C<records>, which returns an array of all records in this table or view.
+Another possibility is to use the C<records> method, which returns an
+array of all records in this table or view.
 
 =head2 A record has fields
 
-And this fields can be queried or changed using the C<record> object, as in 
+A record's fields can be queried or changed using the C<record>
+object, as in
 
-  $rec->set("field","value"); # string
-  $rec->set("field",4);       # int
-  $rec->set("field","file");  # streams
-  
+  $rec->set("field", "value"); # string
+  $rec->set("field", 4);       # int
+  $rec->set("field", "file");  # streams
+
   $rec->get("field");
-  $rec->getintofile("field","file");
+  $rec->getintofile("field", "file");
 
 or you can have separate C<field> objects:
 
-  $field=$rec->field("field");
+  $field = $rec->field("field");
 
-  $data=$field->get();
+  $data = $field->get();
   $field->set(2);
 
-Remark: the access to files (streams) is currently not finished.
+Access to files (streams) is currently not finished.
 
 =head2 Errors
 
-Each object may access an C<error> method, which gives a string or an array (depending on context)
-containing the error information.
+Each object may access an C<error> method, which gives a string or an
+array (depending on context) containing the error information.
 
-Help wanted: Is there a way to get a error string from the number which does not depend on the current MSI database?
-
-Especially the developer-errors (2000 and above) are not listed.
+Help wanted: Is there a way to get a error string from the number
+which does not depend on the current MSI database?  In particular, the
+developer errors (2000 and above) are not listed.
 
 =head1 REMARKS
 
-This module depends on C<Win32::API>, which is used to import the functions out of the F<msi.dll>.
+This module depends on C<Win32::API>, which is used to import the
+functions out of the F<msi.dll>.
 
 Currently the C<Exporter> is not used - patches are welcome.
 
 =head2 AUTHOR
 
-Please contact C<pmarek@cpan.org> for questions, suggestions, and patches (C<diff -wu2> please).
+Please contact C<pmarek@cpan.org> for questions, suggestions, and
+patches (C<diff -wu2> please).
+
+A big thank you goes to DBH for various changes throughout the code.
 
 =head2 Further plans
 
-A C<Win32::MSI::Tools> package is planned - which will allow to compare databases and give a diff, and similar tools.
+A C<Win32::MSI::Tools> package is planned - which will allow to
+compare databases and give a diff, and similar tools.
 
 I have started to write a simple Tk visualization.
 
@@ -181,59 +205,62 @@ S<http://msdn.microsoft.com/library/default.asp?url=/library/en-us/msi/setup/ins
 
 =cut
 
+use strict;
+use warnings;
+
 use Win32::API;
 
-$VERSION="1.04";
-
+our $VERSION = "1.05";
 
 ###### Constants and other definitions
 
-$MsiOpenDataBase =new Win32::API("msi","MsiOpenDatabase","PPP","I") || die $!;
-$MsiOpenDataBasePIP =new Win32::API("msi","MsiOpenDatabase","PIP","I") || die $!;
-$MsiCloseHandle =new Win32::API("msi","MsiCloseHandle","I","I") || die $!;
-$MsiDataBaseCommit =new Win32::API("msi","MsiDatabaseCommit","I","I") || die $!;
-$MsiDatabaseApplyTransform =new Win32::API("msi","MsiDatabaseApplyTransform","IPI","I") || die $!;
+# Shorthand to define API call constants
+sub _def
+{
+  return Win32::API->new("msi", @_, "I") || die $!;
+}
 
-$MsiViewExecute =new Win32::API("msi","MsiViewExecute","II","I") || die $!;
-$MsiDatabaseOpenView =new Win32::API("msi","MsiDatabaseOpenView","IPP","I") || die $!;
-$MsiViewClose =new Win32::API("msi","MsiViewClose","I","I") || die $!;
-$MsiViewFetch =new Win32::API("msi","MsiViewFetch","IP","I") || die $!;
+my $MsiOpenDatabase = _def(MsiOpenDatabase => "PPP");
+my $MsiOpenDatabasePIP = _def(MsiOpenDatabase => "PIP");
+my $MsiCloseHandle = _def(MsiCloseHandle => "I");
+my $MsiDataBaseCommit = _def(MsiDatabaseCommit => "I");
+my $MsiDatabaseApplyTransform = _def(MsiDatabaseApplyTransform => "IPI");
+my $MsiViewExecute = _def(MsiViewExecute => "II");
+my $MsiDatabaseOpenView = _def(MsiDatabaseOpenView => "IPP");
+my $MsiViewClose = _def(MsiViewClose => "I");
+my $MsiViewFetch = _def(MsiViewFetch => "IP");
+my $MsiRecordGetFieldCount = _def(MsiRecordGetFieldCount => "I");
+my $MsiRecordGetInteger = _def(MsiRecordGetInteger => "II");
+my $MsiRecordGetString = _def(MsiRecordGetString => "IIPP");
+my $MsiRecordGetStringIIIP = _def(MsiRecordGetString => "IIIP");
+my $MsiRecordSetInteger = _def(MsiRecordSetInteger => "III");
+my $MsiRecordSetString = _def(MsiRecordSetString => "IIP");
+my $MsiRecordSetStream = _def(MsiRecordSetStream => "IIP");
+my $MsiCreateRecord = _def(MsiCreateRecord => "I");
+my $MsiViewGetColumnInfo = _def(MsiViewGetColumnInfo => "IIP");
+my $MsiGetLastErrorRecord = _def(MsiGetLastErrorRecord => "");
+my $MsiFormatRecord = _def(MsiFormatRecord => "IIPP");
 
-$MsiRecordGetFieldCount =new Win32::API("msi","MsiRecordGetFieldCount","I","I") || die $!;
-$MsiRecordGetInteger  =new Win32::API("msi","MsiRecordGetInteger","II","I") || die $!;
-$MsiRecordGetString =new Win32::API("msi","MsiRecordGetString","IIPP","I") || die $!;
-$MsiRecordGetStringIIIP =new Win32::API("msi","MsiRecordGetString","IIIP","I") || die $!;
+# External constants
 
-$MsiRecordSetInteger  =new Win32::API("msi","MsiRecordSetInteger","III","I") || die $!;
-$MsiRecordSetString =new Win32::API("msi","MsiRecordSetString","IIP","I") || die $!;
-$MsiRecordSetStream =new Win32::API("msi","MsiRecordSetStream","IIP","I") || die $!;
-$MsiCreateRecord =new Win32::API("msi", "MsiCreateRecord", "I","I") || die $!;
+our $MSIDBOPEN_READONLY = 0;
+our $MSIDBOPEN_TRANSACT = 1;
+our $MSIDBOPEN_DIRECT = 2;
+our $MSIDBOPEN_CREATE = 3;
 
-$MsiViewGetColumnInfo =new Win32::API("msi", "MsiViewGetColumnInfo", "IIP","I") || die $!;
+our $MSICOLINFO_NAMES = 0;
+our $MSICOLINFO_TYPES = 1;
+my $_MSICOLINFO_INDEX = 21231231;    # For own use, not defined by MS
 
-$MsiGetLastErrorRecord =new Win32::API("msi", "MsiGetLastErrorRecord", "", "I") || die $!;
-$MsiFormatRecord =new Win32::API("msi", "MsiFormatRecord", "IIPP", "I") || die $!;
+our $MSITR_IGNORE_ADDEXISTINGROW = 0x1;
+our $MSITR_IGNORE_DELMISSINGROW = 0x2;
+our $MSITR_IGNORE_ADDEXISTINGTABLE = 0x4;
+our $MSITR_IGNORE_DELMISSINGTABLE = 0x8;
+our $MSITR_IGNORE_UPDATEMISSINGROW = 0x10;
+our $MSITR_IGNORE_CHANGECODEPAGE = 0x20;
+our $MSITR_VIEWTRANSFORM = 0x100;
 
-
-$MSIDBOPEN_READONLY=0;
-$MSIDBOPEN_TRANSACT=1;
-$MSIDBOPEN_DIRECT=2;
-$MSIDBOPEN_CREATE=3;
-
-$MSICOLINFO_NAMES=0;
-$MSICOLINFO_TYPES=1;
-$_MSICOLINFO_INDEX=21231231; # for own use, not defined by MS
-
-
-$MSITR_IGNORE_ADDEXISTINGROW=0x1;
-$MSITR_IGNORE_DELMISSINGROW=0x2;
-$MSITR_IGNORE_ADDEXISTINGTABLE=0x4;
-$MSITR_IGNORE_DELMISSINGTABLE=0x8;
-$MSITR_IGNORE_UPDATEMISSINGROW=0x10;
-$MSITR_IGNORE_CHANGECODEPAGE=0x20;
-$MSITR_VIEWTRANSFORM=0x100;
-
-$MSITR_IGNORE_ALL=
+our $MSITR_IGNORE_ALL =
   $MSITR_IGNORE_ADDEXISTINGROW |
   $MSITR_IGNORE_DELMISSINGROW |
   $MSITR_IGNORE_ADDEXISTINGTABLE |
@@ -241,161 +268,142 @@ $MSITR_IGNORE_ALL=
   $MSITR_IGNORE_UPDATEMISSINGROW |
   $MSITR_IGNORE_CHANGECODEPAGE;
 
-$MSI_NULL_INTEGER=-0x80000000;
-$ERROR_NO_MORE_ITEMS||=259;
-$ERROR_MORE_DATA||=234;
+my $MSI_NULL_INTEGER = -0x80000000;
+my $ERROR_NO_MORE_ITEMS = 259;
+my $ERROR_MORE_DATA = 234;
 
-
-$COLTYPE_STREAM = 1;
-$COLTYPE_INT = 2;
-$COLTYPE_STRING = 3;
-%COLTYPES = (
-  "i" => $COLTYPE_INT,
-  "j" => $COLTYPE_INT,
-  "s" => $COLTYPE_STRING,
-  "g" => $COLTYPE_STRING,
-  "l" => $COLTYPE_STRING,
-  "v" => $COLTYPE_STREAM,
+my $COLTYPE_STREAM = 1;
+my $COLTYPE_INT = 2;
+my $COLTYPE_STRING = 3;
+my %COLTYPES = (
+  "i" => $COLTYPE_INT, 
+  "j" => $COLTYPE_INT, 
+  "s" => $COLTYPE_STRING, 
+  "g" => $COLTYPE_STRING, 
+  "l" => $COLTYPE_STRING, 
+  "v" => $COLTYPE_STREAM, 
 );
 
-$INITIAL_EMPTY_STRING= "\0" x 1024;
+my $INITIAL_EMPTY_STRING = "\0" x 1024;
 
 ##### Default Routines
+
 sub new
 {
-  my($file,$mode)=@_;
-  my(%a,$hdl);
-  my($me);
+  my ($file, $mode) = @_;
 
-  return undef unless $file;
+  return undef unless ($file);
 
-  $hdl="\0\0\0\0";
-  $mode=$MSIDBOPEN_TRANSACT if !defined $mode;
+  my $hdl = pack("l",0);
+  $mode = $MSIDBOPEN_TRANSACT unless (defined($mode));
   if ($mode =~ /^\d+$/)
   {
-# For special values of mode another call is 
-# needed (integer instead of pointer)
-    $MsiOpenDataBasePIP->Call($file, $mode,$hdl) && return undef;
+    # For special values of mode another call
+    # is needed (integer instead of pointer)
+    $MsiOpenDatabasePIP->Call($file, $mode, $hdl) and return undef;
   }
   else
   {
-    $MsiOpenDataBase->Call($file, $mode,$hdl) && return undef;
+    $MsiOpenDatabase->Call($file, $mode, $hdl) and return undef;
   }
 
-  $a{"handle"}=unpack("l",$hdl);
+  my %a = (handle => unpack("l", $hdl));
 
-  _bless_type(\%a,"db");
+  return _bless_type(\%a, "db");
 }
 
 sub DESTROY
 {
-  my $self=shift;
+  my $self = shift;
 
-  $self->_commit()
-  if ($self->{""} eq "db");
+  $self->_commit() if ($self->{""} eq "db");
 
-  &_close($self->{"handle"}) && return undef
-  if $self->{"handle"};
-  $self={};
+  if ($self->{"handle"})
+  {
+    _close($self->{"handle"}) and return undef;
+  }
+  $self = {};
 }
 
+##### Public Routines
 
-##### External Routines
+# Database method to return the records in $table, optionally
+# qualified by SQL clause $where with parameters @param
 
 sub table
 {
-  my($self,$table, $where,@parm)=@_;
-  my($sql);
+  my ($self, $table, $where, @param) = @_;
 
-
-  $sql="SELECT * FROM " . $table . "";
-  $sql.=" WHERE " . $where if ($where);
-
-  $self->view($sql,@parm);
-}
-
-sub view
-{
-  my($self,$sql,@parm)=@_;
-  my($hdl);
-  my(%s,$a,$me);
+  return undef unless (defined $table);
 
   $self->_check("db");
 
-  $hdl="\0\0\0\0";
-  $a=$MsiDatabaseOpenView->Call($self->{"handle"},$sql,$hdl);
-  $a && return undef;
+  my $sql = "SELECT * FROM $table" . (defined $where && " WHERE $where");
 
-  $s{"handle"}=unpack("l",$hdl);
-  if (@parm)
-  {
-    $a=_newrecord(@parm);
-    $a || return undef;
-#		print "openview: ",scalar(@parm)," parms: ",join(" ",@parm),"\n";
-  }
-  else
-  {
-    $a=0;
-  }
-  $MsiViewExecute->Call($s{"handle"},$a) && return undef;
+  $self->view($sql, @param);
+}
 
+# Database method to return the view obtained by executing $sql SELECT
+# statement with parameters @param.  If $sql is not a SELECT then
+# return an object of "type" "sql".
+
+sub view
+{
+  my ($self, $sql, @param) = @_;
+
+  $self->_check("db");
+
+  my $hdl = pack("l",0);
+  $MsiDatabaseOpenView->Call($self->{"handle"}, $sql, $hdl) and return undef;
+  my %s = (handle => unpack("l", $hdl));
+
+  my $a = 0;
+  if (@param)
+  {
+    $a = _newrecord(@param) or return undef;
+  }
+  $MsiViewExecute->Call($s{"handle"}, $a) and return undef;
   _close($a) if ($a);
 
+  return _bless_type(\%s, "sql") unless ($sql =~ /^\s*SELECT\s/i);
 
-  if ($sql !~ /^\s*SELECT\s/i)
-  {
-    $me=_bless_type(\%s,"sql");
-    return $me;
-  }
-
-  $me=_bless_type(\%s,"v");
+  my $me = _bless_type(\%s, "v");
   $me->get_info(undef);
-  $me->{"coltypes"}=
-  [ map { 
-    $COLTYPES{ 
-      lc( 
-	substr($_->{"type"},0,1) 
-      ) 
-    }; 
-  } @{$me->{"colinfo"}} ];
-
-  $me;
+  $me->{"coltypes"} = [ map($COLTYPES{lc(substr($_->{type}, 0, 1))},
+              @{$me->{"colinfo"}}) ];
+  return $me;
 }
+
+# Given a table or view, return record number $recnum.  Fetch records
+# as necessary.  If $recnum is undef, fetch all records and return the
+# first.
 
 sub record
 {
-  my($self,$recnum)=@_;
+  my ($self, $recnum) = @_;
 
   $self->_check("v");
 
-  while ($recnum > $self->{"fetched"} || !defined($recnum))
+  while (!defined($recnum) || $recnum > $self->{"fetched"})
   {
-    my($hdl,$l);
-
-    $hdl="\0\0\0\0";
-    $l=$MsiViewFetch->Call($self->{"handle"},$hdl);
-
-    last if ($l == $ERROR_NO_MORE_ITEMS);
-
-    $hdl=unpack("l",$hdl);
-    $self->{"records"}[$self->{"fetched"} ++]=
-    _bless_type(
-      { "handle" => $hdl, 
-	"view" => $self }, 
-      "r");
-  }  
-
-  $self->{"records"}[$recnum];
+    my $hdl = pack("l",0);
+    last if ($MsiViewFetch->Call($self->{"handle"}, $hdl)
+         == $ERROR_NO_MORE_ITEMS);
+    $hdl = unpack("l", $hdl);
+    $self->{"records"}[$self->{fetched} ++] =
+      _bless_type({handle => $hdl, view => $self}, "r");
+  }
+  return $self->{"records"}[$recnum || 0];
 }
 
 sub records
 {
-  my($self)=@_;
+  my ($self) = @_;
 
   $self->_check("v");
-
   $self->record(undef);
-  @{$self->{"records"}};
+
+  return @{$self->{"records"}};
 }
 
 sub fields
@@ -403,390 +411,363 @@ sub fields
   return field(@_);
 }
 
+# Return a record's fields with names @names, or the first such in a
+# scalar context
+
 sub field
 {
-  my($self,@name)=@_;
-  my(@ret,$n,$i,$cn);
+  my ($self, @names) = @_;
+  my ($cn);
 
   $self->_check("r");
-  @ret=();
-  for $n (@name)
+  my @ret = ();
+  for my $n (@names)
   {
-    $i=$self->{"view"}->get_info($_MSICOLINFO_INDEX,$field);
+    my $i = $self->{"view"}->get_info($_MSICOLINFO_INDEX, $n);
     if (defined $i)
     {
-      push @ret,
-      _bless_type(
-	{ "rec" => $self,
-	  "cn" => $i->{"index"} }, 
-	"f");
+      push @ret, bless_type({rec => $self, 
+                   cn => $i->{"index"}}, "f");
     }
     else
-    { 
-      push @ret,undef;
+    {
+      push @ret, undef;
     }
   }
-
-  @name > 1 || wantarray() ? @ret : $ret[0];
+  return @names > 1 || wantarray() ? @ret : $ret[0];
 }
 
 sub close
 {
-  my $self=shift;
+  my $self = shift;
+
   $self->DESTROY();
 }
 
 sub get
 {
-  my($self,$field)=@_;
-  my($f);
+  my ($self, $field) = @_;
 
-  $self->_check("r","f");
+  $self->_check("r", "f");
 
-  if ($self->_type() eq "f")
+  if ($self->_type() eq "f")      # Get the value of a field
   {
-#field
-    return $self->{"rec"}{"data"}[$self->{"cn"}];
+    return $self->{"rec"}{data}[$self->{cn}];
   }
 
-# record
-  if (!$self->{"data"})
+  if (!$self->{"data"})        # Get $field from a record
   {
-    $self->{"data"} = [ 
-    _extract_fields(
-      $self->{"handle"},
-      @{$self->{"view"}{"coltypes"}} ) ];
+    $self->{"data"} = [_extract_fields($self->{handle}, 
+                       @{$self->{"view"}{coltypes}} ) ];
   }
-
-  $f=$self->{"view"}->get_info($_MSICOLINFO_INDEX,$field);
+  my $f = $self->{"view"}->get_info($_MSICOLINFO_INDEX, $field);
 
   return defined($f) ? $self->{"data"}[$f] : undef;
 }
 
 sub set
 {
-  my($self,$field,$value)=@_;
-  my($rec,$cn,$type);
+  my ($self, $field, $value) = @_;
+  my ($rec, $cn, $type);
 
-  $self->_check("r","f");
+  $self->_check("r", "f");
 
-  if ($self->_type() eq "r")
+  if ($self->_type() eq "r")      # Set $field of this record
   {
-# record
-    $rec=$self;
-    $cn=$self->{"view"}->get_info($_MSICOLINFO_INDEX,$field);
+    $rec = $self;
+    $cn = $self->{"view"}->get_info($_MSICOLINFO_INDEX, $field);
   }
-  else
+  else                # Set this field
   {
-# field
-    $rec=$self->{"rec"};
-    $cn=$self->{"cn"};
-    $value=$field; # $field not given
+    $rec = $self->{"rec"};
+    $cn = $self->{"cn"};
+    $value = $field;        # $field not given
   }
 
-# msi numbers columns from 1
-  $type=$rec->{"view"}{"coltypes"}[$cn];
+  $cn++;                # MSI numbers columns from 1
+  $type = $rec->{"view"}{coltypes}[$cn];
   if ($type == $COLTYPE_INT)
   {
-    $MsiRecordSetInteger->Call($rec->{"handle"},$cn+1,$value) && return undef;
+    $MsiRecordSetInteger->Call($rec->{"handle"}, $cn, $value)
+      and return undef;
   }
   elsif ($type == $COLTYPE_STRING)
   {
-    $MsiRecordSetString->Call($rec->{"handle"},$cn+1,$value) && return undef;
+    $MsiRecordSetString->Call($rec->{"handle"}, $cn, $value)
+      and return undef;
   }
   elsif ($type == $COLTYPE_STREAM)
   {
-    $MsiRecordSetStream->Call($rec->{"handle"},$cn+1,$value) && return undef;
+    $MsiRecordSetStream->Call($rec->{"handle"}, $cn, $value)
+      and return undef;
   }
   else
   {
     return undef;
   }
-
   return 1;
-}
-
-sub error
-{
-  my($self)=shift;
-  my ($e,$q);
-  my(@a,$s,$l);
-
-  $e=$MsiGetLastErrorRecord->Call();
-#  die "no error" if (!$e);
-  return undef if (!$e);
-
-  @a=_extract_fields($e);
-  _close($e);
-
-  return wantarray() ? @a : "MSIDB error: '" . join("' '",@a) . "'";
-
-# TODO: is there some way we can get the text of the error messages?
-# they are only partly in the msi file. (only for installation)
-#	developer error codes (wrong SQL syntax eg) ?
-  print join("<>",@a),"\n";
-  $q=$self->openview("SELECT Message FROM Error WHERE Error=?",$a[0]);
-  die unless $q;
-
-  push @a,$q->fetch();
-  &_close($q);
-  $q=newrecord(@a) || die $!;
-  print "rec=$q\n";
-  $s=" " x 1024;
-  $l=pack("l",length($s));
-  $MsiFormatRecord->Call($self,$q,$s,$l) || die $!;
-  print "->$s\n";
-  substr($s,unpack("l",$l))="";
-  &_close($e);
-  $s;
 }
 
 sub coltypes
 {
-  my($self)=@_;
+  my ($self) = @_;
+
   $self->get_info($MSICOLINFO_TYPES);
 }
 
 sub colnames
 {
-  my($self)=@_;
+  my ($self) = @_;
+
   $self->get_info($MSICOLINFO_NAMES);
 }
 
+# Return column names or types for this view
+# $which =
+#   $MSICOLINFO_NAMES
+#  $MSICOLINFO_TYPES
+#  $_MSICOLINFO_INDEX => Return column index of $field
+#   undef => return whole colinfo hash
+
 sub get_info
 {
-  my($self,$which,$field)=@_;
-# is MSICOLINFO_NAMES MSICOLINFO_TYPES
-  my $hdl,@name,@type,$n,$t,$i;
+  my ($self, $which, $field) = @_;
 
   $self->_check("v");
 
+  # Fetch and store my colinfo if absent
   if (!$self->{"colinfo"})
   {
-    $hdl="\0\0\0\0";
-    $MsiViewGetColumnInfo->Call($self->{"handle"},$MSICOLINFO_NAMES,$hdl) && return undef;
-    $hdl=unpack("l",$hdl);
-    @name= _extract_fields($hdl);
-    &_close($hdl);
+    my $hdl = pack("l",0);
+    $MsiViewGetColumnInfo->Call($self->{"handle"}, $MSICOLINFO_NAMES, $hdl)
+      and return undef;
+    $hdl = unpack("l", $hdl);
+    my @name = _extract_fields($hdl);
+    _close($hdl);
 
-    $hdl="\0\0\0\0";
-    $MsiViewGetColumnInfo->Call($self->{"handle"},$MSICOLINFO_TYPES,$hdl) && return undef;
-    $hdl=unpack("l",$hdl);
-    @type= _extract_fields($hdl);
-    &_close($hdl);
+    $hdl = pack("l",0);
+    $MsiViewGetColumnInfo->Call($self->{"handle"}, $MSICOLINFO_TYPES, $hdl)
+      and return undef;
+    $hdl = unpack("l", $hdl);
+    my @type = _extract_fields($hdl);
+    _close($hdl);
 
-    $i=0;
-    while (@name)
+    foreach my $i (0..$#name)
     {
-      $n=shift @name;
-      $t=shift @type;
-      $self->{"colinfo_hash"}{$n} = $self->{"colinfo"}[$i] = 
-      { "name" => $n, 
-	"type" => $t,
-	"index" => $i};
-      $i++;
+      my $n = $name[$i];
+      $self->{"colinfo_hash"}{$n} = $self->{colinfo}[$i] =
+        {name => $n, type => $type[$i], index => $i};
     }
   }
 
-  if ($which == $_MSICOLINFO_INDEX)
+  if  (defined $which && $which == $_MSICOLINFO_INDEX)
   {
-    return undef unless $field;
+    return undef unless ($field);
 
-    $t=$self->{"colinfo_hash"}{$field};
+    my $t = $self->{"colinfo_hash"}{$field};
     return $t ? $t->{"index"} : undef;
   }
-
-  return %{$self->{"colinfo_hash"}} if !defined($which);
-  return map { $_->{"name"}; } @{$self->{"colinfo"}} 
-  if ($which == $MSICOLINFO_NAMES);
-  return map { $_->{"type"}; } @{$self->{"colinfo"}} 
-  if ($which == $MSICOLINFO_TYPES);
-  return undef;
+  return       !defined($which) ? %{$self->{"colinfo_hash"}} :
+    $which == $MSICOLINFO_NAMES ? map($_->{"name"}, @{$self->{colinfo}}) :
+    $which == $MSICOLINFO_TYPES ? map($_->{"type"}, @{$self->{colinfo}}) :
+    undef;
 }
 
-sub die
+# die with $message followed by error info from $self
+
+sub db_die
 {
-  my($self)=shift;
-  my(@a,@c);
+  my ($self, @msg) = @_;
 
-  @a=$self->error();
-  @c=caller;
-  print "error ",shift @a;
-  print ": ",join(" ",@a),"\n",
-  "in ",join(" ",@c),"\n";
+  die join(" ", @msg), ": ", join("/", $self->error);
 }
 
+sub error
+{
+  my ($self) = shift;
+
+  my $e = $MsiGetLastErrorRecord->Call() or return undef;
+  my @a = _extract_fields($e);
+  _close($e);
+
+  return wantarray ? @a : join("/", @a);
+}
+
+# XXX Errors 1000-1999 are install-time errors and their strings are
+# stored in the Error table but errors > 2000 are MSI authoring errors
+# and are not in the error table.
+
+# ms-help://MS.PSDKXPSP2.1033/msi/setup/windows_installer_error_messages.htm
+
+sub _error_string_to_do
+{
+  my ($self, @a) = @_;
+
+  print join("<>", @a), "\n";
+  my $q = $self->openview("SELECT Message FROM Error WHERE Error = ?", $a[0])
+    or die $!;
+  push @a, $q->fetch();
+  _close($q);
+  $q = newrecord(@a) or die $!;
+  print "rec = $q\n";
+  my $s = " " x 1024;
+  my $l = pack("l", length($s));
+  $MsiFormatRecord->Call($self, $q, $s, $l) or die $!;
+  print "->$s\n";
+  substr($s, unpack("l", $l)) = "";
+
+  return $s;
+}
 
 sub transform
 {
-  my($self,$filename,$flags)=@_;
-  my($r);
+  my ($self, $filename, $flags) = @_;
 
   $self->_check("db");
-  return undef unless $filename;
+  return undef unless ($filename);
 
-  $flags=$MSITR_IGNORE_ALL if !defined($flags);
+  $flags = $MSITR_IGNORE_ALL if (!defined($flags));
 
-  $r=$MsiDatabaseApplyTransform->Call(
-    $self->{"handle"},$filename,$flags);
+  my $r = $MsiDatabaseApplyTransform->Call(
+    $self->{"handle"}, $filename, $flags);
+
   return $r;
 }
 
-
-##### Internal Routines
-# should not be used outside this module
-
+##### Internal Routines - not for use outside this module
 
 sub _commit
 {
-  my $self=shift;
-  $MsiDataBaseCommit->Call($self->{"handle"}) && return undef;
+  my $self = shift;
+
+  $MsiDataBaseCommit->Call($self->{"handle"}) and return undef;
 }
 
 sub _close
 {
-  my $hdl=shift;
+  my $hdl = shift;
 
-  $MsiCloseHandle->Call($hdl) && return undef;
+  $MsiCloseHandle->Call($hdl) and return undef;
+}
+
+# Bless hash $ref into this package, setting its "type" in the hash
+# element with an empty string key.  Ugh.
+
+sub _bless_type
+{
+  my ($ref, $type, $class) = @_;
+
+  my $me = bless $ref, $class || __PACKAGE__;
+  $me->{""} = $type;
+
+  return $me;
 }
 
 sub _type
 {
-  my($self)=@_;
+  my ($self) = @_;
 
   return $self->{""};
 }
 
 sub _check
 {
-  my($self,@allowed)=@_;
-  my($t);
+  my ($self, @allowed) = @_;
 
-  $t=$self->_type();
-  die "$self is a wrong type:'$t' instead of " . join(",",@allowed)
-  unless grep($t eq $_,@allowed);
+  my $t = $self->_type();
+
+  die "$self is type '$t' instead of " . join(", ", @allowed)
+    unless (grep($t eq $_, @allowed));
 }
 
-sub _bless_type
-{
-  my($ref,$type,$class)=@_;
-  my($me);
-
-  $me=bless $ref,$class || "Win32::MSI::DB";
-  $me->{""}=$type;
-  $me;
-}
+# Return the handle for a new record containing @list
 
 sub _newrecord
 {
-  my(@list)=@_;
-  my($hdl,$i);
+  my (@list) = @_;
 
-  $hdl=$MsiCreateRecord->Call(scalar(@list));
-  return undef if !$hdl;
+  my $hdl = $MsiCreateRecord->Call(scalar(@list)) or return undef;
 
-  for($i=0; $i<@list; $i++)
+  for my $i (0..$#list)
   {
-#		print "new rec. $i: ",$list[$i]," is a ";
+    # print "new rec. $i: ", $list[$i], " is ";
     if ($list[$i] =~ /^\d+$/)
     {
-#			print "int\n";
-      $MsiRecordSetInteger->Call($hdl,$i+1,$list[$i]) && return undef;
+      # print "int\n";
+      $MsiRecordSetInteger->Call($hdl, $i+1, $list[$i]) and return undef;
     }
     else
     {
-#			print "string\n";
-      $MsiRecordSetString->Call($hdl,$i+1,$list[$i]) && return undef;
+      # print "string\n";
+      $MsiRecordSetString->Call($hdl, $i+1, $list[$i]) and return undef;
     }
   }
-
-  $hdl;
+  return $hdl;
 }
 
 sub _getI
 {
-  my($hdl,$num)=@_;
-  my($i);
+  my ($hdl, $num) = @_;
 
-  $i= $MsiRecordGetInteger->Call($hdl,$num);
-  return undef if ($i == $MSI_NULL_INTEGER);
-  $i;
+  my $i = $MsiRecordGetInteger->Call($hdl, $num);
+
+  return $i == $MSI_NULL_INTEGER ? undef : $i;
 }
 
 sub _getS
 {
-  my($hdl,$num)=@_;
-  my($l,$s,$e,$p);
+  my ($hdl, $num) = @_;
+  my ($len);
 
-  $s=$INITIAL_EMPTY_STRING;
-  $p=pack("l",length($s)); # initial size
-  $e=$MsiRecordGetString->Call($hdl,$num,$s,$p);
+  my $s = $INITIAL_EMPTY_STRING;
+  my $p = pack("l", length($s));    # Initial size
+  my $e = $MsiRecordGetString->Call($hdl, $num, $s, $p);
   if ($e == $ERROR_MORE_DATA)
   {
-    $l=unpack("l",$p)*2; # unicode?
-    $s="\0" x $l;
-    $e=$MsiRecordGetString->Call($hdl,$num,$s,$l);
+    $len = unpack("l", $p)*2;    # Unicode?
+    $s = "\0" x $len;
+    $e = $MsiRecordGetString->Call($hdl, $num, $s, $len);
   }
-  die $! if $e;
+  die $! if ($e);
 
-  $l=unpack("l",$p);
-  return "((too big))" if ($l > length($s));
+  $len = unpack("l", $p);
+  return "((too big))" if ($len > length($s));
 
-#  $l=index($s,"\0");
-#  $l=length($s) if $l<0;
-  return substr($s,0,$l);
+#  $l = index($s, "\0");
+#  $l = length($s) if $l<0;
+
+  return substr($s, 0, $len);
 }
+
+# Get values of fields for $hdl.  If present, @types gives the type,
+# $COLTYPE_INT or $COLTYPE_STRING of each field; otherwise try to
+# fetch it as an int and if that fails try string.
 
 sub _extract_fields
 {
-  my($hdl,@types)=@_;
-  my(@a,$i,$l);
+  my ($hdl, @types) = @_;
 
-  $i=$MsiRecordGetFieldCount->Call($hdl);
-  $i || die $!;
-  @a=();
-  $c=1;
-  while ($c <= $i)
+  my $i = $MsiRecordGetFieldCount->Call($hdl) or die $!;
+  my @a = ();
+  for my $c (1..$i)
   {
+    my $s;
     if (@types)
     {
-      $l=shift @types;
-
-      if ($l == $COLTYPE_INT)
-      {
-	push @a,_getI($hdl,$c);
-      }
-      elsif ($l == $COLTYPE_STRING)
-      {
-	push @a,_getS($hdl,$c);
-      }
-      else
-      {
-# STREAMS and other not processed here
-	push @a,undef;
-      }
+      my $t = shift @types;
+      $s = $t == $COLTYPE_INT ? _getI($hdl, $c) :
+         $t == $COLTYPE_STRING ? _getS($hdl, $c) :
+         undef;          # STREAMS and other not processed here
     }
-    else
+    else              # Autodetect mode
     {
-# autodetect-mode
-      $s=_getI($hdl,$c);
-
-      if (defined($s))
-      {
-	push @a,$s;
-      }
-      else
-      {
-	push @a,_getS($hdl,$c);
-      }
+      $s = _getI($hdl, $c);
+      $s = _getS($hdl, $c) unless (defined($s));
     }
-
-    $c++;
+    push @a, $s;
   }
-
-  @a;
+  return @a;
 }
 
-# vi rules :-)
 # vim: sw=2 ai
 
