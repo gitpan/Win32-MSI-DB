@@ -183,7 +183,7 @@ S<http://msdn.microsoft.com/library/default.asp?url=/library/en-us/msi/setup/ins
 
 use Win32::API;
 
-$VERSION="1.03";
+$VERSION="1.04";
 
 
 ###### Constants and other definitions
@@ -645,7 +645,7 @@ sub _commit
 
 sub _close
 {
-  my $hdk=shift;
+  my $hdl=shift;
 
   $MsiCloseHandle->Call($hdl) && return undef;
 }
