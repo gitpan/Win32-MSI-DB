@@ -1,4 +1,4 @@
-Win32/MSI/DB version 1.02
+Win32/MSI/DB version 1.03
 =========================
 
 This is a object-oriented interface for changing MSI-databases.
@@ -26,4 +26,12 @@ COPYRIGHT AND LICENCE
 
 GPL, see http://www.fsf.org/licenses/gpl.html
 (C)opyright 2003 by pmarek@cpan.org.
+
+
+**** Changes ****
+
+* since 1.02
+Field type "l" added (localized string), which ist used
+in eg. File and Directory tables
+
 

@@ -183,7 +183,7 @@ S<http://msdn.microsoft.com/library/default.asp?url=/library/en-us/msi/setup/ins
 
 use Win32::API;
 
-$VERSION="1.02";
+$VERSION="1.03";
 
 
 ###### Constants and other definitions
@@ -254,6 +254,7 @@ $COLTYPE_STRING = 3;
   "j" => $COLTYPE_INT,
   "s" => $COLTYPE_STRING,
   "g" => $COLTYPE_STRING,
+  "l" => $COLTYPE_STRING,
   "v" => $COLTYPE_STREAM,
 );
 
