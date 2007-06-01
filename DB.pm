@@ -210,7 +210,7 @@ use warnings;
 
 use Win32::API;
 
-our $VERSION = "1.05";
+our $VERSION = "1.06";
 
 ###### Constants and other definitions
 
@@ -484,8 +484,8 @@ sub set
     $value = $field;        # $field not given
   }
 
-  $cn++;                # MSI numbers columns from 1
   $type = $rec->{"view"}{coltypes}[$cn];
+  $cn++;                # MSI numbers columns from 1
   if ($type == $COLTYPE_INT)
   {
     $MsiRecordSetInteger->Call($rec->{"handle"}, $cn, $value)
